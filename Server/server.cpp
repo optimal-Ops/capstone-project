@@ -2,7 +2,6 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -19,9 +18,7 @@ const int PORT = 9000;
 const int BACKLOG = 10;
 const std::string FILE_DIR = "files";
 
-std::mutex file_mtx; // protect file writes
-
-// Helper: read a line terminated by '\n'
+std::mutex file_mtx; 
 ssize_t recv_line(int sock, std::string &out)
 {
     out.clear();
@@ -122,8 +119,6 @@ void handle_upload(int client_sock, const std::string &filename)
     }
     size_t size = std::stoul(sizeLine.substr(5));
     std::string path = join_path(FILE_DIR, filename);
-
-    // write to temp then rename (atomic-ish)
     std::string tmp = path + ".tmp";
     {
         std::lock_guard<std::mutex> lk(file_mtx);
@@ -143,7 +138,6 @@ void handle_upload(int client_sock, const std::string &filename)
             received += r;
         }
         ofs.close();
-        // rename
         rename(tmp.c_str(), path.c_str());
     }
     send_all(client_sock, "UPLOAD_OK\n", 10);
@@ -157,7 +151,6 @@ void *client_thread(void *arg)
 
     std::string line;
     send_all(client_sock, "WELCOME\n", 8);
-    // Expect AUTH first
     if (recv_line(client_sock, line) <= 0)
     {
         close(client_sock);
@@ -169,7 +162,6 @@ void *client_thread(void *arg)
         close(client_sock);
         return nullptr;
     }
-    // parse
     std::istringstream iss(line);
     std::string cmd, user, pass;
     iss >> cmd >> user >> pass;
@@ -217,7 +209,6 @@ void *client_thread(void *arg)
 
 int main()
 {
-    // ensure directories exist (best to create manually)
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0)
     {
