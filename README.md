@@ -19,11 +19,13 @@ Clients can upload, download, and list files on the server.
 ### Server
 
 g++ server.cpp utils.cpp -o server -lpthread
+
 ./server
 
 ### Client
 
 g++ client.cpp -o client
+
 ./client
 
 _Enter username and password_
